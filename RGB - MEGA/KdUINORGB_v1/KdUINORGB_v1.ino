@@ -1,7 +1,7 @@
 /*
  KdUINORGB_v1
  
- 12/02/2016
+ 16/06/2016
  Raul Bardaji
  
   Leemos la frecuencia de salida de los sensores TS230R.
@@ -30,12 +30,19 @@
 #include <SD.h>
 #include <SPI.h>
 
+// INFORMACION DE METADATOS
+// Profundidad donde se va a colocar cada sensor, en orden, de menor a mayor
+#define DEPTHS "4 5 6 7"
+
+// Configuracion del baud rate de la comunicacion serie
+#define BAUDRATE 38400
+
 // Configuracion de los tiempos de medida en milisegundos
-#define MEASURING_TIME 5000
+#define MEASURING_TIME 3000
 
 // Configuracion de los pines que controlan los filtros de los sensores TCS230
-#define S3_PIN 8
-#define S2_PIN 9
+#define S3_PIN 39
+#define S2_PIN 41
 
 // Configuracion de los pines de recepcion de datos de los sensores TCS230
 #define SENSOR_21 21
@@ -61,6 +68,7 @@
 #define ONE 'N'
 #define OK '+'
 #define KO '-'
+#define NOSD 'K'
 
 // Variable para comprobar que la SD esta conectada correctamente
 bool sdOk = false;
@@ -98,7 +106,7 @@ void setup()
 
   // Configuracion comunicacion serie
   //Serial.begin(38400);
-  Serial.begin(9600);
+  Serial.begin(BAUDRATE);
 
   // Configuracion de targeta SD
   pinMode(SS, OUTPUT);
@@ -138,7 +146,12 @@ void loop()
           measuresNow = true;
           Serial.println(OK);
         }
-        else Serial.println(KO);
+        else
+        {
+          // Si ha entrado aqui hay algun error. Descartaremos todo el buffer de la comunicacion serie
+          while (Serial.available() > 0) orden = Serial.read();
+          Serial.println(NOSD);
+        }
         break;
       case STOP:
         Serial.println(STOP);
@@ -152,7 +165,12 @@ void loop()
           sendData();
           Serial.println(OK);
         }
-        else Serial.println(KO);
+        else
+        {
+          // Si ha entrado aqui hay algun error. Descartaremos todo el buffer de la comunicacion serie
+          while (Serial.available() > 0) orden = Serial.read();
+          Serial.println(NOSD);
+        }
         break;
       case DELETE:
         Serial.println(DELETE);
@@ -161,7 +179,12 @@ void loop()
           deleteData();
           Serial.println(OK);
         }
-        else Serial.println(KO);
+        else
+        {
+          // Si ha entrado aqui hay algun error. Descartaremos todo el buffer de la comunicacion serie
+          while (Serial.available() > 0) orden = Serial.read();
+          Serial.println(NOSD);
+        }
         break;
      case TIME:
         Serial.println(TIME);
@@ -170,7 +193,12 @@ void loop()
           readTime();
           Serial.println(OK);
         }
-        else Serial.println(KO);
+        else 
+        {
+          // Si ha entrado aqui hay algun error. Descartaremos todo el buffer de la comunicacion serie
+          while (Serial.available() > 0) orden = Serial.read();
+          Serial.println(NOSD);
+        }
         break;
      case OK:
         Serial.println(OK);
@@ -318,8 +346,9 @@ void metadata(char date[20])
   {
     dataFile.println("# Mode: Buoy");
     dataFile.print("# Measuring time: ");dataFile.println(MEASURING_TIME);
+    dataFile.print("# Depths: ");dataFile.println(DEPTHS);
     // MODIFICAR A PARTIR DE AQUI PARA CADA CONFIGURACION DE SENSORES QUE TENGAMOS
-    dataFile.println("# Sensors: TCS230 TCS230 TCS230 TCS230");
+    dataFile.println("# Sensors: TCS3200 TCS3200 TCS3200 TCS3200");
     dataFile.println("# Input pin of sensors: 21 20 19 18");
     dataFile.println("# Notes: El sensor TCS230 hace 4 medidas (rojo, verde, azul y sin filtro). Por eso cada medida se compone de 4 lineas (una linea para cada color, en orden de Rojo, Verde, Azul y No Filtro). Cada color es una nueva medida asi que este sensor tarda 4 x MEASURING_TIME en hacer una ronda de medida completa.");
     dataFile.print("# Start time: "); dataFile.println(date);
@@ -377,7 +406,7 @@ void readTime()
     else 
     {
       watchdog++;
-      delay(200);
+      delay(500);
     }
   }
   savedTime[i] = '\0';
