@@ -33,13 +33,13 @@
 
 // INFORMACION DE METADATOS
 // Profundidad donde se va a colocar cada sensor, en orden, de menor a mayor
-#define DEPTHS "4 5 6 7"
+#define DEPTHS "1.6 2.1 2.33 2.56 2.76 2.96"
 
 // Configuracion del baud rate de la comunicacion serie
 #define BAUDRATE 38400
 
 // Configuracion de los tiempos de medida en milisegundos
-#define MEASURING_TIME 3000
+#define MEASURING_TIME 30000
 
 // Configuracion de los pines que controlan los filtros de los sensores TCS230
 #define S3_PIN 39
@@ -50,6 +50,8 @@
 #define SENSOR_20 20
 #define SENSOR_19 19
 #define SENSOR_18 18
+#define SENSOR_2 2
+#define SENSOR_3 3
 
 // Constantes de configuracion del sensor TCS230. 
 // Estas constantes se usan para la funcion configTCS230()
@@ -80,6 +82,8 @@ unsigned long pulseCnt21 = 0;
 unsigned long pulseCnt20 = 0;
 unsigned long pulseCnt19 = 0;
 unsigned long pulseCnt18 = 0;
+unsigned long pulseCnt2 = 0;
+unsigned long pulseCnt3 = 0;
 
 // Variable con el numero de la medida
 unsigned int measuringNumber = 0;
@@ -96,7 +100,9 @@ void setup()
   pinMode(SENSOR_21, INPUT);
   pinMode(SENSOR_20, INPUT); 
   pinMode(SENSOR_19, INPUT); 
-  pinMode(SENSOR_18, INPUT);          
+  pinMode(SENSOR_18, INPUT);
+  pinMode(SENSOR_2, INPUT);
+  pinMode(SENSOR_3, INPUT);          
   pinMode(S3_PIN, OUTPUT); 
   pinMode(S2_PIN, OUTPUT);
 
@@ -105,6 +111,8 @@ void setup()
   attachInterrupt(3, addPulse20, RISING);
   attachInterrupt(4, addPulse19, RISING);
   attachInterrupt(5, addPulse18, RISING);
+  attachInterrupt(0, addPulse2, RISING);
+  attachInterrupt(1, addPulse3, RISING);
 
   // Configuracion comunicacion serie
   Serial.begin(BAUDRATE);
@@ -290,6 +298,10 @@ void oneMeasurement()
   Serial.print(pulseCnt19);
   Serial.print(" ");
   Serial.print(pulseCnt18);
+  Serial.print(" ");
+  Serial.print(pulseCnt3);
+  Serial.print(" ");
+  Serial.print(pulseCnt2);
   
   
 }
@@ -314,6 +326,8 @@ void resetCounters()
   pulseCnt20 = 0;
   pulseCnt19 = 0;
   pulseCnt18 = 0;
+  pulseCnt3 = 0;
+  pulseCnt2 = 0;
 }
 
 // Funciones que incrementan el numero de pulsos de cada sensor TCS230, se activan con las interrupciones
@@ -321,6 +335,8 @@ void addPulse21(){ pulseCnt21++; }
 void addPulse20(){ pulseCnt20++; }
 void addPulse19(){ pulseCnt19++; }
 void addPulse18(){ pulseCnt18++; }
+void addPulse3(){ pulseCnt3++; }
+void addPulse2(){ pulseCnt2++; }
 
 // Funcion de configuracion del sensor TCS230
 void configTCS230(int color)
@@ -379,9 +395,9 @@ void metadata(char date[20])
     dataFile.print("# Measuring time: ");dataFile.println(MEASURING_TIME);
     dataFile.print("# Depths: ");dataFile.println(DEPTHS);
     // MODIFICAR A PARTIR DE AQUI PARA CADA CONFIGURACION DE SENSORES QUE TENGAMOS
-    dataFile.println("# Sensors: TCS3200 TCS3200 TCS3200 TCS3200");
-    dataFile.println("# Input pin of sensors: 21 20 19 18");
-    dataFile.println("# Notes: El sensor TCS230 hace 4 medidas (rojo, verde, azul y sin filtro). Por eso cada medida se compone de 4 lineas (una linea para cada color, en orden de Rojo, Verde, Azul y No Filtro). Cada color es una nueva medida asi que este sensor tarda 4 x MEASURING_TIME en hacer una ronda de medida completa.");
+    dataFile.println("# Sensors: TSL230 TSL230 TSL230 TSL230 TSL230 TSL230");
+    dataFile.println("# Input pin of sensors: 21 20 19 18 3 2");
+    dataFile.println("# Notes: El sensor TSL230 hace 1 medida del PAR.");
     dataFile.print("# Start time: "); dataFile.println(date);
     dataFile.close();
   } 
@@ -401,7 +417,11 @@ void saveData()
     dataFile.print(" ");
     dataFile.print(pulseCnt19);
     dataFile.print(" ");
-    dataFile.println(pulseCnt18);
+    dataFile.print(pulseCnt18);
+    dataFile.print(" ");
+    dataFile.print(pulseCnt3);
+    dataFile.print(" ");
+    dataFile.println(pulseCnt2);
     dataFile.close();
   }
 }
